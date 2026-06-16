@@ -1,67 +1,118 @@
 # CaptionFlow
 
-擷取 macOS 系統音訊,即時顯示原文與譯文的字幕 app。全本機運算(STT + 翻譯),不需連網。
+**English** | [繁體中文](README.zh-Hant.md)
 
-- **最低系統**:macOS 26
-- **音訊截取**:ScreenCaptureKit(需螢幕錄製權限)
-- **語音轉文字**:SpeechAnalyzer / SpeechTranscriber(備援:WhisperKit)
-- **翻譯**:本機 LLM(MLX + Qwen,品質優先)/ Apple Translation(低延遲保底)
+Real-time, on-device captioning and translation for macOS. CaptionFlow captures
+system audio, transcribes it to text, translates it, and shows the original plus
+the translation as live subtitles — **everything runs locally**, with no cloud
+service. The only network use is the one-time download of speech/translation
+models.
 
-## 產生並開啟專案
+- **Minimum OS**: macOS 26
+- **Audio capture**: ScreenCaptureKit (requires Screen Recording permission)
+- **Speech-to-text**: Apple SpeechAnalyzer / SpeechTranscriber, or WhisperKit (switchable)
+- **Translation**: on-device LLM (MLX + Qwen, quality-first) or Apple Translation (low-latency fallback)
+- **UI languages**: English (default), Traditional Chinese, Simplified Chinese, Japanese — follows the system language, with an in-app override
 
-未提交 `.xcodeproj`,改用 [XcodeGen](https://github.com/yonaskolb/XcodeGen) 從 `project.yml` 產生:
+## How it works
+
+```
+ScreenCaptureKit ─► system audio
+        │
+        ▼
+   STT (streaming) ──► partial source text (shown live)
+        │ sentence finalized
+        ▼
+  Translation (LLM / Apple) ──► translated text
+        │
+        ▼
+   SwiftUI display (bilingual / source only / translation only)
+```
+
+Incremental strategy: while a sentence is still being spoken, only the source
+text updates live. Once the STT engine finalizes the sentence, it is sent for
+translation, so you see "source appears instantly, translation follows a beat
+later." The LLM translator also feeds the previous few lines as context and
+automatically retries when an output comes back untranslated, which helps with
+context-dependent short phrases and messy speech-to-text input.
+
+## Features
+
+- **Two STT engines** — Apple SpeechAnalyzer (native streaming, best integration)
+  or WhisperKit (`base` / `small` / `large-v3`; often more robust for multilingual
+  audio such as Japanese).
+- **Two translation engines** — on-device LLM (MLX + Qwen, quality-first, default)
+  or Apple Translation (lowest latency / lowest memory).
+- **Memory-aware model recommendation** — picks the best Qwen model that fits your
+  RAM budget, or lets you choose manually.
+- **Built-in download manager** — download, cancel, and delete LLM and Whisper
+  models from Settings.
+- **History** — every Start → Stop is saved as a session you can review and copy.
+- **Display modes** — bilingual, source only, or translation only.
+
+## Requirements
+
+- macOS 26
+- Xcode 26, including the **Metal Toolchain** (needed to compile MLX):
+  ```bash
+  xcodebuild -downloadComponent MetalToolchain
+  ```
+- [XcodeGen](https://github.com/yonaskolb/XcodeGen):
+  ```bash
+  brew install xcodegen
+  ```
+
+## Build & run
+
+The `.xcodeproj` is **not** committed — it is generated from `project.yml` with
+XcodeGen. After cloning (or whenever you change `project.yml` / add files):
 
 ```bash
-brew install xcodegen      # 若尚未安裝
 xcodegen generate
 open CaptionFlow.xcodeproj
 ```
 
-## 現況:可執行的骨架
+Then run from Xcode with **▶︎**. Running from Xcode is recommended: it handles
+automatic signing, which the Screen Recording (TCC) permission is tied to.
 
-按「開始」即可看到 UI 運作 —— 目前走 **mock 服務**(假字幕 + 假翻譯),
-所以**不需要任何權限,也不需要下載模型**。真實的 ML 接點都已就位、標了 `TODO`。
+> First run will prompt for Screen Recording permission. The first time you use a
+> given STT/translation model, it is downloaded (a few GB) and cached locally for
+> offline use afterwards.
 
-切換到真實 pipeline:把 [`CaptionPipeline`](CaptionFlow/Pipeline/CaptionPipeline.swift)
-的 `useMockServices` 設為 `false`,然後依下列接點填實作。
+## Configuration
 
-## 架構
+Open **Settings** to choose:
 
-```
-ScreenCaptureKit ─► 系統音訊
-        │
-        ▼
-   STT(串流)──► partial 原文(即時顯示)
-        │ 整句 finalize
-        ▼
-  翻譯(LLM / Apple)──► 譯文
-        │
-        ▼
-     SwiftUI 顯示(雙語 / 只原文 / 只譯文)
-```
+- **STT engine** and (for WhisperKit) which model to use
+- **Translation engine** (on-device LLM vs Apple Translation)
+- **Model selection** — auto-recommend by memory, or pick manually
+- **Language** — interface language (System default, English, 繁體中文, 简体中文, 日本語)
 
-| 目錄 | 內容 |
+Source/target languages and the display mode are set from the control bar on the
+main window.
+
+## Project layout
+
+| Directory | Contents |
 |---|---|
-| `App/` | App 進入點 |
-| `Models/` | `Language`、`DisplayMode`、`CaptionSegment`、`LLMModel` |
-| `ModelManagement/` | 依記憶體推薦模型(`HardwareProfiler`、`ModelRecommender`、`ModelManager`) |
-| `Audio/` | `AudioCaptureService` 協定 + ScreenCaptureKit 實作 |
-| `Speech/` | STT 協定 + SpeechAnalyzer 接點 + Mock |
-| `Translation/` | 翻譯協定 + MLX / Apple 接點 + Mock |
-| `Pipeline/` | `CaptionPipeline` 串接整條流程 |
-| `Views/` | 主畫面、控制列、字幕列表、設定 |
-| `Settings/` | `AppSettings`(UserDefaults 持久化) |
+| `App/` | App entry point |
+| `Audio/` | ScreenCaptureKit capture, buffer conversion, level metering |
+| `Speech/` | STT protocol + SpeechAnalyzer and WhisperKit transcribers |
+| `Translation/` | Translation protocol + MLX/Qwen and Apple Translation services |
+| `ModelManagement/` | Hardware profiling, model recommendation, download managers |
+| `Pipeline/` | `CaptionPipeline` wiring the whole flow together |
+| `Views/` | Main window, control bar, caption list, settings, history |
+| `Models/` | `Language`, `DisplayMode`, `CaptionSegment`, `LLMModel`, history types |
+| `Settings/` | `AppSettings` (UserDefaults), localization helper |
+| `Resources/` | String Catalogs (`Localizable.xcstrings`, `InfoPlist.xcstrings`) |
+| `scripts/` | `package.sh` (build + sign + zip), `gen_xcstrings.py` (regenerate catalogs) |
 
-## 待接上的真實實作(TODO)
+## Privacy
 
-1. **STT** — [`SpeechAnalyzerTranscriber`](CaptionFlow/Speech/SpeechAnalyzerTranscriber.swift):接 macOS 26 的 `SpeechAnalyzer` / `SpeechTranscriber`。
-2. **本機翻譯** — [`MLXTranslationService`](CaptionFlow/Translation/MLXTranslationService.swift):加入 `mlx-swift` SPM 套件,依 `ModelManager.effectiveModel(for:)` 載入 Qwen 並暖機常駐。
-3. **Apple 翻譯** — [`AppleTranslationService`](CaptionFlow/Translation/AppleTranslationService.swift):接 Translation framework。
-4. **音訊轉檔** — [`SystemAudioCaptureService`](CaptionFlow/Audio/SystemAudioCaptureService.swift):把 `CMSampleBuffer` 轉成 STT 需要的 16kHz mono。
+All transcription and translation happen on-device. CaptionFlow does not send
+audio or text to any server. The only outbound network request is downloading
+models (from Hugging Face) on first use.
 
-## 模型自動推薦
+## License
 
-[`HardwareProfile`](CaptionFlow/ModelManagement/HardwareProfiler.swift) 讀取實體記憶體,
-預留 ~8GB(給 OS、STT、本 app、使用者同時開的軟體)後算出 LLM 預算;
-[`ModelRecommender`](CaptionFlow/ModelManagement/ModelRecommender.swift) 在預算內挑品質最高的 Qwen。
-使用者可在「設定 → 模型」關閉自動、手動指定;放不下的模型會標示「記憶體可能不足」。
+[MIT](LICENSE)
