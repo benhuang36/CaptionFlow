@@ -40,7 +40,10 @@ final class WhisperKitTranscriber: TranscriptionService {
     // 斷句策略:句尾有結束標點 + 短停頓就斷;否則靠停頓長度斷。
     // 口語日文 Whisper 幾乎不打標點,故另加「軟斷句」:夠長 + 任何小停頓就斷,
     // 避免連續語流(無標點)一路衝到上限變成一面牆。
-    private let sentenceEndSilence = 0.5         // 已成句(有結束標點)+ 這麼久停頓 → 定稿
+    private let sentenceEndSilence = 0.8         // 已成句(有結束標點)+ 這麼久停頓 → 定稿
+                                                 // (英文:Whisper 常在句中插假句號,門檻太低會把
+                                                 //  "I don't have much time" 切成 "...much." + "time.";
+                                                 //  拉到 0.8s 讓句中換氣的假句號不觸發)
     private let hardSilence = 1.0                // 不論是否成句,停這麼久就定稿(說話者停下)
     private let softBreakSeconds = 6.0           // 語句已達這麼長 + 換氣小停頓 → 軟斷句(不必有標點)
     private let softBreakSilence = 0.4           // 軟斷句所需的最短停頓(一次換氣)

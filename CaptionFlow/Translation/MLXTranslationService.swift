@@ -73,7 +73,11 @@ final class MLXTranslationService: TranslationService {
         let session = ChatSession(container, generateParameters: parameters)
         let prompt = Self.makePrompt(text: text, context: context,
                                      source: sourceName, target: targetName)
-        let result = Self.cleanOutput(try await session.respond(to: prompt))
+        // 計時診斷(量 prefill 速度 / 確認 thinking 是否關掉)。需要時取消下面兩行註解。
+        // let started = Date()
+        let raw = try await session.respond(to: prompt)
+        let result = Self.cleanOutput(raw)
+        // Self.logTiming(elapsed: Date().timeIntervalSince(started), raw: raw, result: result, text: text)
 
         // 小模型遇到破碎/亂的語音辨識,常退化成「整理原文」而非翻譯——
         // 輸出仍夾原文(日文假名)或英文單字。偵測到就用更強硬的 prompt、
@@ -99,29 +103,35 @@ final class MLXTranslationService: TranslationService {
             let lines = context
                 .map { "\($0.source) → \($0.translated)" }
                 .joined(separator: "\n")
-            contextBlock = """
-
-            Preceding lines already translated (CONTEXT ONLY — do NOT translate or repeat these, use them only to understand what is being said):
-            \(lines)
-
-            """
+            // 精簡上下文框架(每個 token 都會增加 M1 Air 的 prefill 時間)。
+            contextBlock = "Context (already translated, don't re-translate):\n\(lines)\n"
         }
 
+        // 刻意精簡:prompt 越短,M1 Air 每句的 prefill 越快(瓶頸在 prefill 而非生成)。
+        // 語言外洩/沒翻成功由 looksUntranslated 重試當後盾,故規則可大幅縮短。
         return """
-        You are a professional real-time subtitle translator. Translate the \(source) text below into \(target).
-
-        Rules:
-        - Output ONLY the \(target) translation of the LAST line — no explanations, no notes, no quotes, no original text, no context lines.
-        - Write the output using ONLY \(target). It must contain NO words from any other language — not \(source), not English, nothing but \(target).
-        - The input is raw speech-to-text: it may be fragmented, unpunctuated, run-on, or have repeated/filler words. Still TRANSLATE its meaning into \(target). Do NOT simply clean up, re-punctuate, or rephrase the original — you must convert it to \(target).
-        - Translate every word, including names and proper nouns, into \(target) (transliterate into \(target) script if needed); never keep them in the original script.
-        - Use the context to resolve meaning: greetings, set phrases and short utterances must be translated by their conversational meaning, not word-by-word literally.
-        - Keep it natural and concise, suitable for a subtitle line.
+        Translate the \(source) line into natural \(target) for a subtitle.
+        Output ONLY the \(target) translation — nothing else, no other language, no quotes.
+        Translate the meaning; render greetings and short phrases by their conversational sense, don't just copy or re-punctuate the original.
+        \(contextBlock)\(source): \(text)
         /no_think
-        \(contextBlock)
-        Translate this line:
-        \(text)
         """
+    }
+
+    /// 量測單句翻譯耗時並檢查 Qwen3 是否還在「思考」(thinking 沒關時會先產一大段
+    /// <think>…</think>,被 cleanOutput strip 掉,但時間都花在那)。只在 Debug 印出。
+    private static func logTiming(elapsed: TimeInterval, raw: String, result: String, text: String) {
+        #if DEBUG
+        let thinkChars: Int
+        if let open = raw.range(of: "<think>"), let close = raw.range(of: "</think>") {
+            thinkChars = raw.distance(from: open.upperBound, to: close.lowerBound)
+        } else {
+            thinkChars = 0
+        }
+        let src = text.prefix(24)
+        print(String(format: "[MLX] %5.1fs  think=%4d  raw=%4d  out=%3d  | %@ → %@",
+                     elapsed, thinkChars, raw.count, result.count, String(src), result))
+        #endif
     }
 
     /// 重試用的強硬 prompt:不帶 context,只逼模型把整段轉成目標語言。

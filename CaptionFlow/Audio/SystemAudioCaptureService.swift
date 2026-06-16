@@ -3,9 +3,7 @@ import CoreMedia
 import ScreenCaptureKit
 
 /// 用 ScreenCaptureKit 截取系統音訊。需要「螢幕錄製」權限(即使只取音訊)。
-///
-/// 注意:第一次 start() 會觸發 TCC 權限提示。骨架階段 CaptionPipeline 預設走 mock,
-/// 不會呼叫這裡;把 pipeline 的 useMockServices 設為 false 後才會真的啟動。
+/// 第一次 start() 會觸發 TCC 權限提示。
 final class SystemAudioCaptureService: NSObject, AudioCaptureService, SCStreamOutput, SCStreamDelegate {
     var onAudio: ((CMSampleBuffer) -> Void)?
     /// 串流中途出錯(例如使用者撤銷權限)會透過這裡回報。
@@ -34,9 +32,15 @@ final class SystemAudioCaptureService: NSObject, AudioCaptureService, SCStreamOu
         // SCStream 仍需有效的視訊設定,給最小尺寸即可(我們只用音訊)。
         config.width = 2
         config.height = 2
+        // 我們不用視訊,把更新降到最低(1fps),減少產生又丟棄的 frame。
+        config.minimumFrameInterval = CMTime(value: 1, timescale: 1)
 
         let stream = SCStream(filter: filter, configuration: config, delegate: self)
         try stream.addStreamOutput(self, type: .audio, sampleHandlerQueue: sampleQueue)
+        // 也註冊 .screen 輸出來「接住」視訊 frame 並默默丟棄(見下方 handler 的 guard)。
+        // 否則 SCStream 仍會產生視訊 frame、卻找不到接收者,瘋狂洗版
+        // "stream output NOT found. Dropping frame"。
+        try stream.addStreamOutput(self, type: .screen, sampleHandlerQueue: sampleQueue)
         try await stream.startCapture()
         self.stream = stream
     }
