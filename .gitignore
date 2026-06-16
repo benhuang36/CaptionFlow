@@ -8,6 +8,9 @@ DerivedData/
 xcuserdata/
 *.xcscmblueprint
 *.xccheckout
+*.hmap
+*.dSYM
+*.dSYM.zip
 
 # XcodeGen 產生的專案(由 project.yml 重建,不入版控)
 *.xcodeproj/
