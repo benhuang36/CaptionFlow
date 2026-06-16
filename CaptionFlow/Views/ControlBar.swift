@@ -8,10 +8,14 @@ struct ControlBar: View {
 
     var body: some View {
         HStack(spacing: 12) {
+            // 來源/目標語言同樣是在 start() 當下快照,執行中改不會生效 → 一併鎖住。
+            // (顯示模式只影響畫面渲染,可即時切換,故不鎖。)
             languagePicker("Source", selection: sourceBinding, options: Language.sourceOptions)
+                .disabled(pipeline.isRunning || pipeline.isPreparing)
             Image(systemName: "arrow.right")
                 .foregroundStyle(.secondary)
             languagePicker("Target", selection: targetBinding, options: Language.targetOptions)
+                .disabled(pipeline.isRunning || pipeline.isPreparing)
 
             Divider().frame(height: 20)
 

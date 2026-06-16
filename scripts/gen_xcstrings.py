@@ -118,6 +118,9 @@ T = {
     # Settings: language picker
     "Language": ("語言", "语言", "言語"),
     "System default": ("系統預設", "系统默认", "システムのデフォルト"),
+    # Settings: locked while capturing
+    "Stop capturing to change these settings.":
+        ("停止擷取後才能變更這些設定。", "停止采集后才能更改这些设置。", "キャプチャを停止すると、これらの設定を変更できます。"),
 }
 
 LANGS = ["zh-Hant", "zh-Hans", "ja"]

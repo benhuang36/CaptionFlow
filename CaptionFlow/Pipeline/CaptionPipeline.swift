@@ -47,6 +47,7 @@ final class CaptionPipeline: ObservableObject {
     func start() async {
         guard !isRunning, !isPreparing else { return }
         isPreparing = true
+        settings.isCapturing = true   // 鏡射給 Settings scene:執行中鎖住「需重啟才生效」的設定
         // 讓出當前 runloop tick,避免在 SwiftUI 更新交易內就改 @Published
         // (否則會出現 "Publishing changes from within view updates" 警告)。
         await Task.yield()
@@ -98,6 +99,7 @@ final class CaptionPipeline: ObservableObject {
             statusMessage = Localized.string("Running")
         } catch {
             isPreparing = false
+            settings.isCapturing = false
             statusMessage = Localized.string("Failed to start: \(error.localizedDescription)")
             translationContinuation?.finish()
             translationContinuation = nil
@@ -110,6 +112,7 @@ final class CaptionPipeline: ObservableObject {
 
     func stop() async {
         isRunning = false
+        settings.isCapturing = false
         statusMessage = Localized.string("Stopped")
 
         // 先停音訊與轉錄(transcriber 收尾可能 emit 最後一句的 final)。

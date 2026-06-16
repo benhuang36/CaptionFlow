@@ -12,6 +12,15 @@ struct SettingsView: View {
     }
 }
 
+/// 執行中提示:這些設定是在「開始」當下快照的,要停止後變更才會生效。
+private struct CaptureLockNote: View {
+    var body: some View {
+        Label("Stop capturing to change these settings.", systemImage: "lock.fill")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+    }
+}
+
 // MARK: - 一般(STT / 翻譯引擎)
 
 private struct GeneralSettingsView: View {
@@ -20,18 +29,24 @@ private struct GeneralSettingsView: View {
 
     var body: some View {
         Form {
+            if settings.isCapturing {
+                Section { CaptureLockNote() }
+            }
+
             Section("Speech Recognition (STT)") {
                 Picker("Recognition Engine", selection: sttBinding) {
                     ForEach(STTEngine.allCases) { engine in
                         Text(engine.label).tag(engine)
                     }
                 }
+                .disabled(settings.isCapturing)
                 if settings.sttEngine == .whisperKit {
                     Picker("Whisper Model", selection: whisperBinding) {
                         ForEach(WhisperModelOption.allCases) { option in
                             Text(option.label).tag(option)
                         }
                     }
+                    .disabled(settings.isCapturing)
                 } else {
                     Text("Apple speech recognition streams natively with the best integration; for some languages WhisperKit may work better.")
                         .font(.caption)
@@ -59,6 +74,7 @@ private struct GeneralSettingsView: View {
                         Text(engine.label).tag(engine)
                     }
                 }
+                .disabled(settings.isCapturing)
                 Text("Use the on-device LLM for best quality; switch to Apple Translation when memory is tight or you want the lowest latency.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -106,6 +122,10 @@ private struct ModelSettingsView: View {
 
     var body: some View {
         Form {
+            if settings.isCapturing {
+                Section { CaptureLockNote() }
+            }
+
             Section("This Mac") {
                 LabeledContent("Physical Memory",
                                value: String(format: "%.0f GB", modelManager.profile.totalRAMGB))
@@ -116,12 +136,13 @@ private struct ModelSettingsView: View {
 
             Section("Model Selection") {
                 Toggle("Auto-recommend based on memory", isOn: autoBinding)
+                    .disabled(settings.isCapturing)
                 Picker("Manual selection", selection: modelBinding) {
                     ForEach(modelManager.catalog) { model in
                         Text(rowLabel(for: model)).tag(model.id)
                     }
                 }
-                .disabled(settings.autoSelectModel)
+                .disabled(settings.autoSelectModel || settings.isCapturing)
                 Text("In use: \(modelManager.effectiveModel(for: settings).displayName)")
                     .font(.caption)
                     .foregroundStyle(.secondary)

@@ -66,6 +66,12 @@ final class AppSettings: ObservableObject {
     /// 介面語言:"system" 跟隨系統,或語言碼(如 "ja")。預設跟隨系統,預設語言為英文。
     @AppStorage(appLanguageKey) var appLanguage: String = "system"
 
+    /// 是否正在擷取/翻譯中(非持久化)。由 CaptionPipeline 在 start/stop 時鏡射其狀態,
+    /// 讓獨立的 Settings scene(拿不到 pipeline)也能在執行中把「需重啟才生效」的
+    /// 設定(STT/翻譯引擎、模型)變灰。pipeline 的設定是在 start() 當下快照的,
+    /// 執行中改不會影響當前這場。
+    @Published var isCapturing = false
+
     /// 套用到 SwiftUI environment 的 \.locale,即時切換所有 Text 的在地化。
     var locale: Locale {
         appLanguage == "system" ? .autoupdatingCurrent : Locale(identifier: appLanguage)
