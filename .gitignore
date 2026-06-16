@@ -1,0 +1,25 @@
+# macOS
+.DS_Store
+
+# Xcode build output
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+
+# XcodeGen 產生的專案(由 project.yml 重建,不入版控)
+*.xcodeproj/
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# 打包輸出
+dist/
+
+# 本機模型快取(執行時才下載)
+Models/
+*.mlmodelc
