@@ -29,7 +29,9 @@ else
   echo "  (略過:未安裝 xcodegen)"
 fi
 
-echo "▸ 建置 $CONFIG…"
+# 注意:${CONFIG} 要加大括號。macOS 內建 bash 3.2 在 UTF-8 locale 下,
+# 若變數緊貼多位元組字元(此處的「…」),會把它吃進變數名 → "unbound variable"。
+echo "▸ 建置 ${CONFIG}…"
 xcodebuild -project "$PROJECT" -scheme "$SCHEME" \
   -destination 'platform=macOS' -configuration "$CONFIG" \
   -derivedDataPath "$DERIVED" build CODE_SIGNING_ALLOWED=NO \

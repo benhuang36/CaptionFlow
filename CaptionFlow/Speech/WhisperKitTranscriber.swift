@@ -37,10 +37,14 @@ final class WhisperKitTranscriber: TranscriptionService {
     private let silenceRMS: Float = 0.005        // 低於此視為靜音(系統音量可能偏低,訂寬鬆些)
     private let minPartialSeconds = 0.5          // 語句至少這麼長才開始轉
     private let transcribeInterval = 0.45        // 兩次轉錄的最小間隔(秒)
-    // 斷句策略:句尾有結束標點 + 短停頓就斷;否則要等到較長停頓(避免句中換氣被切斷)。
-    private let sentenceEndSilence = 0.5         // 已成句 + 這麼久停頓 → 定稿
-    private let hardSilence = 1.3                // 不論是否成句,停這麼久就定稿(說話者停下)
-    private let maxSegmentSeconds = 18.0         // 語句過長就強制定稿(安全上限)
+    // 斷句策略:句尾有結束標點 + 短停頓就斷;否則靠停頓長度斷。
+    // 口語日文 Whisper 幾乎不打標點,故另加「軟斷句」:夠長 + 任何小停頓就斷,
+    // 避免連續語流(無標點)一路衝到上限變成一面牆。
+    private let sentenceEndSilence = 0.5         // 已成句(有結束標點)+ 這麼久停頓 → 定稿
+    private let hardSilence = 1.0                // 不論是否成句,停這麼久就定稿(說話者停下)
+    private let softBreakSeconds = 6.0           // 語句已達這麼長 + 換氣小停頓 → 軟斷句(不必有標點)
+    private let softBreakSilence = 0.4           // 軟斷句所需的最短停頓(一次換氣)
+    private let maxSegmentSeconds = 9.0          // 語句過長就強制定稿(安全上限)
     private let terminators: Set<Character> = [".", "?", "!", "。", "?", "!", "…"]
 
     init(model: String) {
@@ -126,12 +130,16 @@ final class WhisperKitTranscriber: TranscriptionService {
         let text = (try? await transcribe(snapshot)) ?? ""
         guard !text.isEmpty else { return }
 
-        // 句尾有結束標點 + 短停頓,或停頓很久(說話者停下),或過長才定稿;
-        // 句中換氣(沒結束標點)不定稿,避免把一句話拆開。
+        // 定稿條件(任一):
+        //  - 過長(安全上限)
+        //  - 停頓很久(說話者停下)
+        //  - 已成句(有結束標點)+ 短停頓
+        //  - 軟斷句:夠長 + 一次換氣的小停頓(處理無標點的連續日文語流)
         let endsSentence = endsWithTerminator(text)
         let finalize = seconds >= maxSegmentSeconds
             || silence >= hardSilence
             || (silence >= sentenceEndSilence && endsSentence)
+            || (seconds >= softBreakSeconds && silence >= softBreakSilence)
 
         if finalize {
             lock.lock()
