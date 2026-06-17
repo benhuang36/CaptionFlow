@@ -9,6 +9,7 @@ final class HistoryStore: ObservableObject {
 
     private var currentSessionID: UUID?
     private let fileURL: URL
+    private var pendingSave: Task<Void, Never>?
 
     init() {
         let directory = FileManager.default
@@ -27,7 +28,7 @@ final class HistoryStore: ObservableObject {
                                      targetLanguageCode: target.code)
         sessions.append(session)
         currentSessionID = session.id
-        save()
+        scheduleSave(debounced: false)
     }
 
     /// 把一句原文+譯文加入目前工作階段。
@@ -39,7 +40,8 @@ final class HistoryStore: ObservableObject {
         sessions[index].lines.append(
             HistoryLine(sourceText: trimmed,
                         translatedText: translatedText.trimmingCharacters(in: .whitespacesAndNewlines)))
-        save()
+        // 高頻路徑:去抖動 + 背景寫檔,避免每句都在主執行緒重編碼整包(跑久了會卡 UI)。
+        scheduleSave(debounced: true)
     }
 
     /// 結束目前工作階段。沒有任何內容的階段不予保留。
@@ -52,7 +54,7 @@ final class HistoryStore: ObservableObject {
             sessions[index].endDate = .now
         }
         currentSessionID = nil
-        save()
+        scheduleSave(debounced: false)
     }
 
     func delete(ids: Set<UUID>) {
@@ -61,7 +63,7 @@ final class HistoryStore: ObservableObject {
         if let current = currentSessionID, !sessions.contains(where: { $0.id == current }) {
             currentSessionID = nil
         }
-        save()
+        scheduleSave(debounced: false)
     }
 
     func delete(_ session: HistorySession) {
@@ -71,7 +73,7 @@ final class HistoryStore: ObservableObject {
     func clearAll() {
         sessions.removeAll()
         currentSessionID = nil
-        save()
+        scheduleSave(debounced: false)
     }
 
     // MARK: - 持久化
@@ -82,8 +84,21 @@ final class HistoryStore: ObservableObject {
         sessions = decoded
     }
 
-    private func save() {
-        guard let data = try? JSONEncoder().encode(sessions) else { return }
-        try? data.write(to: fileURL, options: .atomic)
+    /// 排程一次寫檔。編碼+寫檔都在背景執行緒(detached),不卡主執行緒。
+    /// debounced=true(高頻的逐句路徑):延遲 2 秒並覆蓋前一個未完成的排程,
+    /// 把連續多句合併成一次寫入。debounced=false(begin/end/delete 等低頻結構變更):立即寫。
+    /// 取一份 sessions 快照(值型別,COW),交給背景 task,避免跨執行緒共享可變狀態。
+    private func scheduleSave(debounced: Bool) {
+        pendingSave?.cancel()
+        let snapshot = sessions
+        let url = fileURL
+        pendingSave = Task.detached(priority: .utility) {
+            if debounced {
+                try? await Task.sleep(for: .seconds(2))
+                if Task.isCancelled { return }
+            }
+            guard let data = try? JSONEncoder().encode(snapshot) else { return }
+            try? data.write(to: url, options: .atomic)
+        }
     }
 }

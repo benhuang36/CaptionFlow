@@ -79,10 +79,12 @@ final class MLXTranslationService: TranslationService {
         let result = Self.cleanOutput(raw)
         // Self.logTiming(elapsed: Date().timeIntervalSince(started), raw: raw, result: result, text: text)
 
-        // 小模型遇到破碎/亂的語音辨識,常退化成「整理原文」而非翻譯——
-        // 輸出仍夾原文(日文假名)或英文單字。偵測到就用更強硬的 prompt、
-        // temperature 0、不帶 context 重跑一次(全新 session,空 cache)。
-        guard Self.looksUntranslated(result, target: targetCode) else { return result }
+        // 兩種失敗都用「不帶 context、temperature 0」重跑一次(全新 session,空 cache)修正:
+        //  1. looksUntranslated:小模型把破碎語音「整理原文」而非翻譯,或夾原文/英文單字。
+        //  2. isEcho:模型照抄某句上下文譯文當答案(沒翻當前句)。若放任,壞輸出會被存起來
+        //     再餵回當上下文,形成自我放大的重複迴圈——重試把它換成真譯文,從源頭斷掉。
+        guard Self.looksUntranslated(result, target: targetCode)
+                || Self.isEcho(result, context: context) else { return result }
 
         var retryParams = GenerateParameters()
         retryParams.temperature = 0
@@ -104,7 +106,8 @@ final class MLXTranslationService: TranslationService {
                 .map { "\($0.source) → \($0.translated)" }
                 .joined(separator: "\n")
             // 精簡上下文框架(每個 token 都會增加 M1 Air 的 prefill 時間)。
-            contextBlock = "Context (already translated, don't re-translate):\n\(lines)\n"
+            // 措辭刻意點明「只是脈絡、別重用」——小模型容易把上下文譯文直接抄成答案。
+            contextBlock = "Earlier lines (context only — never reuse these as your answer):\n\(lines)\n"
         }
 
         // 刻意精簡:prompt 越短,M1 Air 每句的 prefill 越快(瓶頸在 prefill 而非生成)。
@@ -144,6 +147,16 @@ final class MLXTranslationService: TranslationService {
 
         \(text)
         """
+    }
+
+    /// 輸出是否只是「照抄某句上下文譯文」——小模型(尤其被同樣的上下文反覆餵)
+    /// 會把前一句的譯文當答案,形成自我放大的重複迴圈。命中就不帶 context 重譯。
+    private static func isEcho(_ output: String, context: [TranslationContextLine]) -> Bool {
+        let trimmed = output.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return false }
+        return context.contains {
+            $0.translated.trimmingCharacters(in: .whitespacesAndNewlines) == trimmed
+        }
     }
 
     /// 判斷輸出是否「其實沒翻成目標語言」。
