@@ -91,6 +91,16 @@ final class WhisperKitTranscriber: TranscriptionService {
             trailingSilenceSamples = 0
         } else {
             trailingSilenceSamples += floats.count
+            // 還沒偵測到語音時,別無限累積前導靜音。來源暫停/靜音時 SCK 仍會送靜音 frame,
+            // 而 tick() 的 `guard speech` 不會清 buffer → 靜音會一路累積(閒置記憶體洩漏 +
+            // 觸發防螺旋洩流狂噴)。只留一小段 pre-roll,讓下一句語音的起頭不被切掉。
+            if !hasSpeech {
+                let preRoll = Int(0.3 * Double(sampleRate))
+                if segment.count > preRoll {
+                    segment.removeFirst(segment.count - preRoll)
+                    trailingSilenceSamples = min(trailingSilenceSamples, segment.count)
+                }
+            }
         }
         lock.unlock()
     }

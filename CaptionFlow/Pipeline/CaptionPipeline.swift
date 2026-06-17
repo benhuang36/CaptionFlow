@@ -12,6 +12,11 @@ final class CaptionPipeline: ObservableObject {
     @Published private(set) var isPreparing = false
     @Published var statusMessage = ""
 
+    /// 目前存活的 pipeline(弱參考,單例由 MainView 的 @StateObject 持有)。
+    /// 供 App 終止(Cmd+Q)時做優雅關閉:先把 MLX 工作停乾淨,避免 Metal device 在 GPU
+    /// 還有命令緩衝在飛時被靜態解構子摧毀 → "Metal object destroyed while still required" 崩潰。
+    static weak var active: CaptionPipeline?
+
     /// 轉錄與翻譯可各自切換真實/mock,方便分階段驗證。
     /// 目前:真實 STT(SpeechAnalyzer + 系統音訊)+ 真實翻譯(依設定的引擎)。
     var useMockTranscriber = false
@@ -42,6 +47,7 @@ final class CaptionPipeline: ObservableObject {
         self.modelManager = modelManager
         self.appleBridge = appleBridge
         self.history = history
+        Self.active = self
     }
 
     func start() async {
