@@ -48,6 +48,10 @@ final class WhisperKitTranscriber: TranscriptionService {
     private let softBreakSeconds = 6.0           // 語句已達這麼長 + 換氣小停頓 → 軟斷句(不必有標點)
     private let softBreakSilence = 0.4           // 軟斷句所需的最短停頓(一次換氣)
     private let maxSegmentSeconds = 9.0          // 語句過長就強制定稿(安全上限)
+    // 防螺旋上限:buffer 超過這麼長就丟掉最舊音訊、只留最近 maxSegmentSeconds。
+    // 比 maxSegmentSeconds 高一點當緩衝——正常會在 9s 由定稿邏輯修剪,只有 STT 追不上
+    // (例如記憶體壓力)導致 buffer 暴漲時才會觸發洩流,把轉錄成本釘在常數、避免死亡螺旋。
+    private let maxBufferSeconds = 12.0
     private let terminators: Set<Character> = [".", "?", "!", "。", "?", "!", "…"]
 
     init(model: String) {
@@ -115,11 +119,29 @@ final class WhisperKitTranscriber: TranscriptionService {
     }
 
     private func tick() async {
+        let maxBufferSamples = Int(maxBufferSeconds * Double(sampleRate))
+        let keepSamples = Int(maxSegmentSeconds * Double(sampleRate))
+
         lock.lock()
+        // 防螺旋:buffer 超過上限(STT 追不上時會暴漲)就丟掉最舊的,只留最近 maxSegmentSeconds。
+        // 這樣每次轉錄的長度被釘上限,不會「越積越長 → 轉錄越慢 → 更長」。代價是落後時丟掉
+        // 一段舊音訊(那幾句會缺),但換來字幕貼近現在、整機不被拖垮。
+        var droppedSamples = 0
+        if segment.count > maxBufferSamples {
+            droppedSamples = segment.count - keepSamples
+            segment.removeFirst(droppedSamples)
+        }
         let count = segment.count
         let speech = hasSpeech
         let silence = Double(trailingSilenceSamples) / Double(sampleRate)
         lock.unlock()
+
+        #if DEBUG
+        if droppedSamples > 0 {
+            print(String(format: "[Whisper] shed %.1fs to avoid backlog spiral",
+                         Double(droppedSamples) / Double(sampleRate)))
+        }
+        #endif
 
         let seconds = Double(count) / Double(sampleRate)
         guard speech, seconds >= minPartialSeconds else { return }
@@ -200,7 +222,10 @@ final class WhisperKitTranscriber: TranscriptionService {
 
     private func transcribe(_ samples: [Float]) async throws -> String {
         guard let whisperKit, samples.count > sampleRate / 10 else { return "" } // 需要 > 0.1 秒
-        let options = DecodingOptions(task: .transcribe, language: languageCode)
+        // temperatureFallbackCount 預設較高(品質檢查沒過就升溫整段重解,最多好幾次)。
+        // 對即時字幕,這種重解會讓單次轉錄成本爆增、助長落後;壓到 1 把最壞情況釘在「2 次解碼」。
+        var options = DecodingOptions(task: .transcribe, language: languageCode)
+        options.temperatureFallbackCount = 1
         let results = try await whisperKit.transcribe(audioArray: samples, decodeOptions: options)
         return results.map(\.text).joined().trimmingCharacters(in: .whitespacesAndNewlines)
     }
