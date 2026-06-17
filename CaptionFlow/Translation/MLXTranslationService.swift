@@ -35,8 +35,22 @@ final class MLXTranslationService: TranslationService {
         }
         self.container = container
 
+        // 限制 MLX 的 GPU buffer 快取上限。模型權重(activeMemory)省不掉,但 MLX 預設會把
+        // 釋放後的 buffer 留著(cacheMemory),上限很高、長時間推論會膨脹 → 在 16GB 機器上
+        // 跟 8B 權重 + WhisperKit 疊加就吃 swap。壓到 256MB 可明顯降低常駐,實測對單句短翻譯
+        // 的速度幾乎無影響(官方也建議記憶體吃緊時設低)。需要時可再調。
+        MLX.GPU.set(cacheLimit: 256 * 1024 * 1024)
+
         // 暖機:先跑一次短翻譯,讓 Metal kernel 編譯、模型常駐,避免首句卡頓。
         _ = try? await runTranslation("Hello.", context: [], container: container)
+
+        #if DEBUG
+        let m = MLX.GPU.snapshot()
+        print(String(format: "[MLX] mem after warmup — active %.2fGB  cache %.2fGB  peak %.2fGB",
+                     Double(m.activeMemory) / 1_073_741_824,
+                     Double(m.cacheMemory) / 1_073_741_824,
+                     Double(m.peakMemory) / 1_073_741_824))
+        #endif
     }
 
     func translate(_ text: String, context: [TranslationContextLine]) async throws -> String {
