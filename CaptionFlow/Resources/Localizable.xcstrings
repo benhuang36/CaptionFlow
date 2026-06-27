@@ -59,6 +59,35 @@
         }
       }
     },
+    "API Key": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API Key"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API キー"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API Key"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "API Key"
+          }
+        }
+      }
+    },
     "Apple Speech": {
       "extractionState": "manual",
       "localizations": {
@@ -523,6 +552,122 @@
         }
       }
     },
+    "Custom API endpoint": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom API endpoint"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "カスタム API エンドポイント"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自定 API endpoint"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自訂 API endpoint"
+          }
+        }
+      }
+    },
+    "Custom Endpoint": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom Endpoint"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "カスタムエンドポイント"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自定 Endpoint"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自訂 Endpoint"
+          }
+        }
+      }
+    },
+    "Custom endpoint error %@: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom endpoint error %@: %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "カスタムエンドポイントのエラー %@:%@"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自定 endpoint 错误 %@:%@"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自訂 endpoint 錯誤 %@:%@"
+          }
+        }
+      }
+    },
+    "Custom endpoint returned no response.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Custom endpoint returned no response."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "カスタムエンドポイントから応答がありません。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自定 endpoint 没有响应。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自訂 endpoint 沒有回應。"
+          }
+        }
+      }
+    },
     "Delete": {
       "extractionState": "manual",
       "localizations": {
@@ -813,6 +958,35 @@
         }
       }
     },
+    "Endpoint URL": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Endpoint URL"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "エンドポイント URL"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Endpoint 网址"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Endpoint 網址"
+          }
+        }
+      }
+    },
     "Failed to start: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -987,6 +1161,64 @@
         }
       }
     },
+    "In use: Custom API": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In use: Custom API"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用中:カスタム API"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "实际使用:自定 API"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "實際使用:自訂 API"
+          }
+        }
+      }
+    },
+    "Invalid custom endpoint URL.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid custom endpoint URL."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "カスタムエンドポイントの URL が無効です。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自定 endpoint 网址无效。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自訂 endpoint 網址無效。"
+          }
+        }
+      }
+    },
     "Language": {
       "extractionState": "manual",
       "localizations": {
@@ -1099,6 +1331,35 @@
           "stringUnit": {
             "state": "translated",
             "value": "模型檔存於 ~/Library/Caches;刪除後下次使用會重新下載。"
+          }
+        }
+      }
+    },
+    "Model name": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model name"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "モデル名"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型名称"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型名稱"
           }
         }
       }
@@ -2002,6 +2263,35 @@
         }
       }
     },
+    "Translates via your OpenAI-compatible endpoint (e.g. OpenAI, OpenRouter, Ollama). Text is sent to that server — this is not on-device.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Translates via your OpenAI-compatible endpoint (e.g. OpenAI, OpenRouter, Ollama). Text is sent to that server — this is not on-device."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenAI 互換エンドポイント(OpenAI / OpenRouter / Ollama など)で翻訳します。テキストはそのサーバーへ送信され、オンデバイスではありません。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "通过你的 OpenAI 兼容 endpoint 翻译(如 OpenAI、OpenRouter、Ollama)。文字会发送到该服务器——这不是全本地。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "透過你的 OpenAI 相容 endpoint 翻譯(如 OpenAI、OpenRouter、Ollama)。文字會送到該伺服器——這不是全本機。"
+          }
+        }
+      }
+    },
     "Translating…": {
       "extractionState": "manual",
       "localizations": {
@@ -2201,6 +2491,64 @@
           "stringUnit": {
             "state": "translated",
             "value": "翻譯:Apple 翻譯"
+          }
+        }
+      }
+    },
+    "Translation: Custom API": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Translation: Custom API"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "翻訳:カスタム API"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "翻译:自定 API"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "翻譯:自訂 API"
+          }
+        }
+      }
+    },
+    "Unexpected response from custom endpoint.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unexpected response from custom endpoint."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "カスタムエンドポイントの応答が想定外です。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自定 endpoint 响应格式非预期。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "自訂 endpoint 回應格式非預期。"
           }
         }
       }

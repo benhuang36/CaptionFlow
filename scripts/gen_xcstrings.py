@@ -121,6 +121,23 @@ T = {
     # Settings: locked while capturing
     "Stop capturing to change these settings.":
         ("停止擷取後才能變更這些設定。", "停止采集后才能更改这些设置。", "キャプチャを停止すると、これらの設定を変更できます。"),
+    # Settings: custom translation endpoint
+    "Custom API endpoint": ("自訂 API endpoint", "自定 API endpoint", "カスタム API エンドポイント"),
+    "In use: Custom API": ("實際使用:自訂 API", "实际使用:自定 API", "使用中:カスタム API"),
+    "Custom Endpoint": ("自訂 Endpoint", "自定 Endpoint", "カスタムエンドポイント"),
+    "Endpoint URL": ("Endpoint 網址", "Endpoint 网址", "エンドポイント URL"),
+    "API Key": ("API Key", "API Key", "API キー"),
+    "Model name": ("模型名稱", "模型名称", "モデル名"),
+    "Translates via your OpenAI-compatible endpoint (e.g. OpenAI, OpenRouter, Ollama). Text is sent to that server — this is not on-device.":
+        ("透過你的 OpenAI 相容 endpoint 翻譯(如 OpenAI、OpenRouter、Ollama)。文字會送到該伺服器——這不是全本機。",
+         "通过你的 OpenAI 兼容 endpoint 翻译(如 OpenAI、OpenRouter、Ollama)。文字会发送到该服务器——这不是全本地。",
+         "OpenAI 互換エンドポイント(OpenAI / OpenRouter / Ollama など)で翻訳します。テキストはそのサーバーへ送信され、オンデバイスではありません。"),
+    "Translation: Custom API": ("翻譯:自訂 API", "翻译:自定 API", "翻訳:カスタム API"),
+    # RemoteTranslationService errors
+    "Invalid custom endpoint URL.": ("自訂 endpoint 網址無效。", "自定 endpoint 网址无效。", "カスタムエンドポイントの URL が無効です。"),
+    "Custom endpoint returned no response.": ("自訂 endpoint 沒有回應。", "自定 endpoint 没有响应。", "カスタムエンドポイントから応答がありません。"),
+    "Custom endpoint error %@: %@": ("自訂 endpoint 錯誤 %@:%@", "自定 endpoint 错误 %@:%@", "カスタムエンドポイントのエラー %@:%@"),
+    "Unexpected response from custom endpoint.": ("自訂 endpoint 回應格式非預期。", "自定 endpoint 响应格式非预期。", "カスタムエンドポイントの応答が想定外です。"),
 }
 
 LANGS = ["zh-Hant", "zh-Hans", "ja"]

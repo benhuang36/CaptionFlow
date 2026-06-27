@@ -141,11 +141,31 @@ private struct ModelSettingsView: View {
                     ForEach(modelManager.catalog) { model in
                         Text(rowLabel(for: model)).tag(model.id)
                     }
+                    Text("Custom API endpoint").tag(AppSettings.customModelID)
                 }
                 .disabled(settings.autoSelectModel || settings.isCapturing)
-                Text("In use: \(modelManager.effectiveModel(for: settings).displayName)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                if settings.usesCustomTranslationEndpoint {
+                    Text("In use: Custom API")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("In use: \(modelManager.effectiveModel(for: settings).displayName)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if !settings.autoSelectModel && settings.selectedModelID == AppSettings.customModelID {
+                Section("Custom Endpoint") {
+                    TextField("Endpoint URL", text: endpointBinding)
+                        .textContentType(.URL)
+                    SecureField("API Key", text: apiKeyBinding)
+                    TextField("Model name", text: modelNameBinding)
+                    Text("Translates via your OpenAI-compatible endpoint (e.g. OpenAI, OpenRouter, Ollama). Text is sent to that server — this is not on-device.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .disabled(settings.isCapturing)
             }
 
             Section("Downloads") {
@@ -181,6 +201,15 @@ private struct ModelSettingsView: View {
     }
     private var modelBinding: Binding<String> {
         Binding(get: { settings.selectedModelID }, set: { settings.selectedModelID = $0 })
+    }
+    private var endpointBinding: Binding<String> {
+        Binding(get: { settings.customEndpoint }, set: { settings.customEndpoint = $0 })
+    }
+    private var apiKeyBinding: Binding<String> {
+        Binding(get: { settings.customAPIKey }, set: { settings.customAPIKey = $0 })
+    }
+    private var modelNameBinding: Binding<String> {
+        Binding(get: { settings.customModelName }, set: { settings.customModelName = $0 })
     }
 }
 

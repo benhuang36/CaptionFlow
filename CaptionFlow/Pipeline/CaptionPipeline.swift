@@ -211,6 +211,12 @@ final class CaptionPipeline: ObservableObject {
         guard !useMockTranslator else { return MockTranslationService() }
         switch settings.translationEngine {
         case .localLLM:
+            // 手動選了「自訂 endpoint」→ 改走遠端 OpenAI 相容 API,不載入本機模型。
+            if settings.usesCustomTranslationEndpoint {
+                return RemoteTranslationService(endpoint: settings.customEndpoint,
+                                                apiKey: settings.customAPIKey,
+                                                model: settings.customModelName)
+            }
             let service = MLXTranslationService(model: modelManager.effectiveModel(for: settings))
             service.onProgress = { [weak self] fraction in
                 Task { @MainActor in

@@ -60,6 +60,20 @@ final class AppSettings: ObservableObject {
     @AppStorage("autoSelectModel") var autoSelectModel: Bool = true
     @AppStorage("selectedModelID") var selectedModelID: String = ""
 
+    // 自訂翻譯 endpoint(OpenAI 相容 /chat/completions)。當手動選了 customModelID 時改走遠端,
+    // 繞過本機 LLM 的記憶體/速度限制。⚠️ 文字會送到該 endpoint,非全本機。key 以明文存 UserDefaults。
+    @AppStorage("customEndpoint") var customEndpoint: String = ""
+    @AppStorage("customAPIKey") var customAPIKey: String = ""
+    @AppStorage("customModelName") var customModelName: String = ""
+
+    /// 模型選單裡代表「自訂 endpoint」的特殊 id(非真實 Qwen repo id)。
+    static let customModelID = "__custom_endpoint__"
+
+    /// 目前是否該走自訂遠端 endpoint(本機 LLM 引擎 + 手動 + 選了自訂)。
+    var usesCustomTranslationEndpoint: Bool {
+        translationEngine == .localLLM && !autoSelectModel && selectedModelID == Self.customModelID
+    }
+
     @AppStorage("sttEngineRaw") var sttEngineRaw: String = STTEngine.appleSpeech.rawValue
     @AppStorage("whisperModelRaw") var whisperModelRaw: String = WhisperModelOption.small.rawValue
 

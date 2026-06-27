@@ -34,6 +34,9 @@ struct MainView: View {
         case .appleTranslation:
             return Localized.string("Translation: Apple Translation")
         case .localLLM:
+            if settings.usesCustomTranslationEndpoint {
+                return Localized.string("Translation: Custom API")
+            }
             return Localized.string("Model: \(modelManager.effectiveModel(for: settings).displayName)")
         }
     }
